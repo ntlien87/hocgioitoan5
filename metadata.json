@@ -1,0 +1,6 @@
+{
+  "name": "Học Giỏi Toán 5",
+  "description": "Ứng dụng học Toán Lớp 5 chuẩn chương trình cả năm theo phong cách phiêu lưu trò chơi: Lý thuyết trực quan, bài tập chinh phục theo level, đấu boss toán học, thi học kỳ, phòng thí nghiệm tương tác và gia sư AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
