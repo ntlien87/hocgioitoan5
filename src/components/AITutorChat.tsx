@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, Sparkles, User, RefreshCw, MessageSquare, Lightbulb, HeartHandshake } from 'lucide-react';
+import { Send, Bot, Sparkles, User, RefreshCw, MessageSquare, Lightbulb, HeartHandshake, PenTool } from 'lucide-react';
+import { SubjectId } from '../types/curriculum';
 import { soundFx } from '../utils/audio';
 
 interface Message {
@@ -9,12 +10,71 @@ interface Message {
   timestamp: string;
 }
 
-export const AITutorChat: React.FC = () => {
+interface AITutorChatProps {
+  currentSubject?: SubjectId;
+}
+
+export const AITutorChat: React.FC<AITutorChatProps> = ({ currentSubject = 'vietnamese' }) => {
+  const getSubjectConfig = () => {
+    if (currentSubject === 'vietnamese') {
+      return {
+        avatar: '✍️',
+        name: 'Thần Bút Thông Thái',
+        tag: 'Gia Sư Luyện Siêu Tả Văn 5',
+        gradient: 'from-emerald-500 via-teal-600 to-cyan-600',
+        welcomeMsg:
+          'Chào con! Thần Bút Thông Thái ✍️ đây! Con đang muốn viết đoạn văn tả cảnh, tả người nào, hay cần Thần Bút giúp nâng cấp một câu văn thô, gợi ý mở bài gián tiếp, thêm từ láy và hình ảnh so sánh? Hãy gõ câu văn của con hoặc hỏi Thần Bút nhé!',
+        quickPrompts: [
+          '✨ Nâng cấp câu này giúp con: "Trời mưa to."',
+          '📜 Gợi ý 3 cách mở bài gián tiếp cho đề: "Tả người mẹ thân yêu"',
+          '🌅 Cho con dàn ý chi tiết bài văn: "Tả cảnh hoàng hôn trên biển"',
+          '🌿 Tìm 5 từ láy và so sánh hay để tả cánh đồng lúa chín',
+          '💖 Sửa đoạn văn tả nụ cười của mẹ cho thật xúc động',
+        ],
+      };
+    }
+
+    if (currentSubject === 'english') {
+      return {
+        avatar: '🦁',
+        name: 'Captain Leo',
+        tag: 'AI English Buddy Grade 5',
+        gradient: 'from-blue-600 via-indigo-600 to-sky-600',
+        welcomeMsg:
+          'Hello there! I am Captain Leo 🦁, your English AI buddy. How can I help you today? Ask me about vocabulary, grammar rules, or let\'s practice simple conversations!',
+        quickPrompts: [
+          '💬 Practice a short conversation about daily routines',
+          '📚 Explain how to use "How often" and adverbs of frequency',
+          '✨ Give me 5 useful words to describe my hometown',
+          '🎯 Quiz me with a fun Grade 5 English riddle',
+        ],
+      };
+    }
+
+    return {
+      avatar: '🦉',
+      name: 'Thầy Cú Thông Thái',
+      tag: 'Gia Sư Toán AI Thông Thái',
+      gradient: 'from-amber-500 via-orange-500 to-amber-600',
+      welcomeMsg:
+        'Chào con! Thầy Cú Thông Thái 🦉 đây. Con đang gặp khó khăn ở bài toán lớp 5 nào, hay cần thầy giảng lại công thức hình học, phân số, số thập phân hoặc chuyển động đều? Hãy hỏi thầy bất cứ câu nào nhé!',
+      quickPrompts: [
+        '📐 Giải thích công thức tính diện tích hình thang dễ hiểu',
+        '⚡ Mẹo nhân chia số thập phân với 10, 100, 0.1, 0.01',
+        '🍰 Cho con 1 bài toán đố vui về phân số',
+        '🏎️ Hướng dẫn cách giải bài toán 2 xe ngược chiều',
+        '📊 Cách tính tỉ số phần trăm học sinh nam nữ trong lớp',
+      ],
+    };
+  };
+
+  const config = getSubjectConfig();
+
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: 'msg_welcome',
+      id: 'msg_welcome_' + currentSubject,
       role: 'assistant',
-      text: 'Chào con! Thầy Cú Thông Thái 🦉 đây. Con đang gặp khó khăn ở bài toán lớp 5 nào, hay cần thầy giảng lại công thức hình học, phân số, số thập phân hoặc chuyển động đều? Hãy hỏi thầy bất cứ câu nào nhé!',
+      text: config.welcomeMsg,
       timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -22,13 +82,17 @@ export const AITutorChat: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const scrollEndRef = useRef<HTMLDivElement | null>(null);
 
-  const quickPrompts = [
-    '📐 Giải thích công thức tính diện tích hình thang dễ hiểu',
-    '⚡ Mẹo nhân chia số thập phân với 10, 100, 0.1, 0.01',
-    '🍰 Cho con 1 bài toán đố vui về phân số',
-    '🏎️ Hướng dẫn cách giải bài toán 2 xe ngược chiều',
-    '📊 Cách tính tỉ số phần trăm học sinh nam nữ trong lớp',
-  ];
+  // Reset initial welcome when subject changes
+  useEffect(() => {
+    setMessages([
+      {
+        id: 'msg_welcome_' + currentSubject + '_' + Date.now(),
+        role: 'assistant',
+        text: config.welcomeMsg,
+        timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+      },
+    ]);
+  }, [currentSubject]);
 
   useEffect(() => {
     scrollEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -56,8 +120,9 @@ export const AITutorChat: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: query,
-          context: 'Học sinh lớp 5 đang học Toán Tiểu học',
+          context: `Học sinh lớp 5 đang học ${currentSubject === 'vietnamese' ? 'Tiếng Việt và Tập Làm Văn Miêu Tả' : currentSubject === 'english' ? 'Tiếng Anh Tiểu Học' : 'Toán Lớp 5'}`,
           type: 'general',
+          subject: currentSubject,
         }),
       });
 
@@ -65,7 +130,7 @@ export const AITutorChat: React.FC = () => {
       const assistantMsg: Message = {
         id: 'ast_' + Date.now(),
         role: 'assistant',
-        text: data.reply || 'Thầy Cú đang bận tính toán một chút, con hãy thử hỏi lại nhé!',
+        text: data.reply || 'Thầy đang suy nghĩ, con chờ một chút nhé!',
         timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, assistantMsg]);
@@ -74,7 +139,7 @@ export const AITutorChat: React.FC = () => {
       const errorMsg: Message = {
         id: 'err_' + Date.now(),
         role: 'assistant',
-        text: 'Thầy Cú đang kết nối thư viện toán học. Con kiểm tra kết nối mạng và hỏi lại nhé!',
+        text: 'Gia sư AI đang kết nối thư viện học liệu. Con kiểm tra kết nối mạng và hỏi lại nhé!',
         timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -84,26 +149,26 @@ export const AITutorChat: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-3 sm:px-4 py-4 pb-24 space-y-4">
+    <div className="w-full max-w-3xl mx-auto px-3 sm:px-4 py-3 pb-28 space-y-4 select-none">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-3xl p-4 sm:p-6 text-white shadow-xl flex items-center justify-between gap-4">
+      <div className={`bg-gradient-to-r ${config.gradient} rounded-3xl p-4 sm:p-6 text-white shadow-xl flex items-center justify-between gap-4`}>
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-3xl shadow-inner">
-            🦉
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-3xl bg-white/20 backdrop-blur-md flex items-center justify-center text-3xl sm:text-4xl shadow-inner ring-2 ring-white/30 shrink-0 animate-float">
+            {config.avatar}
           </div>
           <div>
-            <div className="inline-flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-black uppercase mb-1 text-purple-200">
-              <Sparkles className="w-3 h-3" />
-              <span>Gia Sư Toán AI Thông Thái</span>
+            <div className="inline-flex items-center gap-1 bg-white/20 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-black uppercase mb-1 text-white">
+              <Sparkles className="w-3 h-3 text-amber-300" />
+              <span>{config.tag}</span>
             </div>
-            <h1 className="text-lg sm:text-xl font-black">Thầy Cú Thông Thái</h1>
-            <p className="text-purple-100 text-xs">Giải đáp mọi thắc mắc toán học lớp 5 24/7</p>
+            <h1 className="text-lg sm:text-xl font-black">{config.name}</h1>
+            <p className="text-white/90 text-xs font-bold">Luôn đồng hành, khen ngợi và giải đáp mọi câu hỏi 24/7</p>
           </div>
         </div>
       </div>
 
-      {/* Chat Messages Container */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col h-[520px]">
+      {/* Chat Container */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col h-[540px]">
         {/* Messages Scroll Area */}
         <div className="flex-1 p-4 overflow-y-auto space-y-4">
           {messages.map((msg) => {
@@ -116,27 +181,27 @@ export const AITutorChat: React.FC = () => {
               >
                 {/* Avatar */}
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm shadow-xs ${
+                  className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 text-base shadow-xs ${
                     isUser
-                      ? 'bg-blue-600 text-white font-bold'
-                      : 'bg-gradient-to-tr from-purple-500 to-indigo-500 text-white'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
                   }`}
                 >
-                  {isUser ? <User className="w-4 h-4" /> : '🦉'}
+                  {isUser ? <User className="w-4 h-4" /> : config.avatar}
                 </div>
 
-                {/* Bubble */}
+                {/* Message Bubble */}
                 <div
-                  className={`max-w-[82%] rounded-2xl p-3.5 text-xs sm:text-sm leading-relaxed whitespace-pre-line shadow-xs ${
+                  className={`max-w-[84%] rounded-3xl p-4 text-xs sm:text-sm leading-relaxed ${
                     isUser
-                      ? 'bg-blue-600 text-white rounded-tr-none'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700'
+                      ? 'bg-blue-600 text-white rounded-tr-none font-bold shadow-sm'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700 font-bold whitespace-pre-line shadow-xs'
                   }`}
                 >
                   {msg.text}
                   <span
-                    className={`block text-[9px] mt-1.5 opacity-70 ${
-                      isUser ? 'text-right text-blue-100' : 'text-left text-slate-400'
+                    className={`block text-[10px] mt-1.5 opacity-75 font-semibold ${
+                      isUser ? 'text-blue-100 text-right' : 'text-slate-500 text-left'
                     }`}
                   >
                     {msg.timestamp}
@@ -148,10 +213,8 @@ export const AITutorChat: React.FC = () => {
 
           {isLoading && (
             <div className="flex items-center gap-2 text-slate-400 text-xs italic pl-10">
-              <div className="w-2 h-2 rounded-full bg-purple-500 animate-bounce" />
-              <div className="w-2 h-2 rounded-full bg-purple-500 animate-bounce [animation-delay:0.2s]" />
-              <div className="w-2 h-2 rounded-full bg-purple-500 animate-bounce [animation-delay:0.4s]" />
-              <span>Thầy Cú đang viết lời giải...</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>{config.name} đang suy nghĩ và gọt giũa câu trả lời...</span>
             </div>
           )}
 
@@ -159,37 +222,36 @@ export const AITutorChat: React.FC = () => {
         </div>
 
         {/* Quick Suggestion Chips */}
-        <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700/60 overflow-x-auto flex gap-2 no-scrollbar">
-          {quickPrompts.map((prompt, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleSendMessage(prompt)}
-              className="shrink-0 text-[11px] font-medium bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-purple-400 hover:text-purple-600 px-3 py-1.5 rounded-full transition"
-            >
-              {prompt}
-            </button>
-          ))}
+        <div className="p-2.5 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            {config.quickPrompts.map((prompt, i) => (
+              <button
+                key={i}
+                onClick={() => handleSendMessage(prompt)}
+                className="whitespace-nowrap text-[11px] font-black bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-emerald-400 px-3.5 py-1.5 rounded-xl transition btn-3d active:scale-95 shadow-xs"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Input Bar */}
         <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2">
           <input
-            id="ai-tutor-input"
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSendMessage();
             }}
-            placeholder="Hỏi Thầy Cú về bài toán con chưa hiểu..."
-            className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder={`Hỏi ${config.name} bất cứ câu hỏi nào...`}
+            className="flex-1 px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs sm:text-sm font-bold focus:outline-hidden focus:border-emerald-500"
           />
-
           <button
-            id="send-ai-message-btn"
-            disabled={!input.trim() || isLoading}
             onClick={() => handleSendMessage()}
-            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-40 text-white p-2.5 rounded-2xl shadow-md transition active:scale-95 shrink-0"
+            disabled={!input.trim() || isLoading}
+            className="p-3 rounded-2xl btn-3d btn-3d-emerald text-white disabled:opacity-40 shadow-md"
           >
             <Send className="w-4 h-4" />
           </button>

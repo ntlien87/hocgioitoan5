@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ActiveTab, Chapter, LessonLevel, UserProgress } from './types/math';
+import { ActiveTab, Chapter, LessonLevel, UserProgress, SubjectId } from './types/curriculum';
 import {
   loadUserProgress,
   saveUserProgress,
@@ -10,10 +10,11 @@ import {
   resetAllProgress,
 } from './utils/storage';
 import { soundFx } from './utils/audio';
-import { chapters } from './data/curriculum';
+import { getChaptersBySubject } from './data/curriculum';
 
 // Subcomponents
 import { Navbar } from './components/Navbar';
+import { SubjectSwitcher } from './components/SubjectSwitcher';
 import { BottomNav } from './components/BottomNav';
 import { QuestMap } from './components/QuestMap';
 import { LessonModal } from './components/LessonModal';
@@ -24,8 +25,17 @@ import { ExamArena } from './components/ExamArena';
 import { AITutorChat } from './components/AITutorChat';
 import { ProfileModal } from './components/ProfileModal';
 
+// Writing Subcomponents
+import { WritingLabs } from './components/writing/WritingLabs';
+import { WritingArena } from './components/writing/WritingArena';
+
+// English Subcomponents
+import { EnglishLabs } from './components/english/EnglishLabs';
+import { EnglishArena } from './components/english/EnglishArena';
+
 export default function App() {
   const [progress, setProgress] = useState<UserProgress>(loadUserProgress);
+  const [currentSubject, setCurrentSubject] = useState<SubjectId>('vietnamese');
   const [activeTab, setActiveTab] = useState<ActiveTab>('quest');
 
   // Modal active states
@@ -35,6 +45,8 @@ export default function App() {
   } | null>(null);
   const [activeBossChapter, setActiveBossChapter] = useState<Chapter | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const currentChapters = getChaptersBySubject(currentSubject);
 
   // Sync sound setting to audio manager on mount/change
   useEffect(() => {
@@ -80,10 +92,10 @@ export default function App() {
     xpReward: number,
     coinReward: number
   ) => {
-    // Find next lesson to unlock
+    // Find next lesson to unlock in current subject
     let nextLessonIdToUnlock: string | undefined;
-    for (let c = 0; c < chapters.length; c++) {
-      const ch = chapters[c];
+    for (let c = 0; c < currentChapters.length; c++) {
+      const ch = currentChapters[c];
       const idx = ch.lessons.findIndex((l) => l.id === lessonId);
       if (idx !== -1) {
         if (idx + 1 < ch.lessons.length) {
@@ -110,9 +122,9 @@ export default function App() {
     coinReward: number
   ) => {
     let nextChapterFirstLesson: string | undefined;
-    const chIdx = chapters.findIndex((c) => c.boss.id === bossId);
-    if (chIdx !== -1 && chIdx + 1 < chapters.length) {
-      nextChapterFirstLesson = chapters[chIdx + 1].lessons[0].id;
+    const chIdx = currentChapters.findIndex((c) => c.boss.id === bossId);
+    if (chIdx !== -1 && chIdx + 1 < currentChapters.length) {
+      nextChapterFirstLesson = currentChapters[chIdx + 1].lessons[0]?.id;
     }
 
     const updated = addDefeatedBoss(bossId, badgeId, xpReward, coinReward);
@@ -123,8 +135,8 @@ export default function App() {
     setProgress(updated);
   };
 
-  const handleUpdateHighScore = (score: number, xpGained: number) => {
-    const updated = updateSpeedScore(score, xpGained);
+  const handleUpdateHighScore = (score: number, xpGained: number, subject: SubjectId = 'math') => {
+    const updated = updateSpeedScore(score, xpGained, subject);
     setProgress(updated);
   };
 
@@ -142,12 +154,23 @@ export default function App() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-blue-500 selection:text-white">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
       {/* Top Fixed Header Navbar */}
       <Navbar
         progress={progress}
+        currentSubject={currentSubject}
         onToggleSound={handleToggleSound}
         onOpenProfile={() => setIsProfileOpen(true)}
+      />
+
+      {/* Subject Switcher Segmented Bar */}
+      <SubjectSwitcher
+        currentSubject={currentSubject}
+        onSelectSubject={(subject) => {
+          setCurrentSubject(subject);
+          setActiveLessonData(null);
+          setActiveBossChapter(null);
+        }}
       />
 
       {/* Main Tab Content Display */}
@@ -155,32 +178,59 @@ export default function App() {
         {activeTab === 'quest' && (
           <QuestMap
             progress={progress}
+            chapters={currentChapters}
+            subjectId={currentSubject}
             onSelectLesson={handleSelectLesson}
             onSelectBoss={(chapter) => setActiveBossChapter(chapter)}
           />
         )}
 
         {activeTab === 'arena' && (
-          <SpeedArena
-            highScore={progress.speedArenaHighScore}
-            onUpdateHighScore={handleUpdateHighScore}
-          />
+          currentSubject === 'vietnamese' ? (
+            <WritingArena
+              highScore={progress.writingArenaHighScore || 0}
+              onUpdateHighScore={(score, xp) => handleUpdateHighScore(score, xp, 'vietnamese')}
+            />
+          ) : currentSubject === 'english' ? (
+            <EnglishArena
+              highScore={progress.englishArenaHighScore || 0}
+              onUpdateHighScore={(score, xp) => handleUpdateHighScore(score, xp, 'english')}
+            />
+          ) : (
+            <SpeedArena
+              highScore={progress.speedArenaHighScore}
+              onUpdateHighScore={(score, xp) => handleUpdateHighScore(score, xp, 'math')}
+            />
+          )
         )}
 
-        {activeTab === 'labs' && <MathLabs />}
+        {activeTab === 'labs' && (
+          currentSubject === 'vietnamese' ? (
+            <WritingLabs />
+          ) : currentSubject === 'english' ? (
+            <EnglishLabs />
+          ) : (
+            <MathLabs />
+          )
+        )}
 
         {activeTab === 'exams' && (
           <ExamArena
             examScores={examScoresMap}
+            currentSubject={currentSubject}
             onSaveExamScore={handleSaveExamScore}
           />
         )}
 
-        {activeTab === 'tutor' && <AITutorChat />}
+        {activeTab === 'tutor' && <AITutorChat currentSubject={currentSubject} />}
       </main>
 
       {/* Bottom Responsive Navigation Bar */}
-      <BottomNav activeTab={activeTab} onSelectTab={(tab) => setActiveTab(tab)} />
+      <BottomNav
+        activeTab={activeTab}
+        currentSubject={currentSubject}
+        onSelectTab={(tab) => setActiveTab(tab)}
+      />
 
       {/* Modals */}
       {activeLessonData && (
@@ -203,13 +253,13 @@ export default function App() {
       {isProfileOpen && (
         <ProfileModal
           progress={progress}
+          currentSubject={currentSubject}
           onClose={() => setIsProfileOpen(false)}
           onUpdateName={handleUpdateName}
           onUpdateAvatar={handleUpdateAvatar}
           onResetProgress={handleResetProgress}
         />
       )}
-
     </div>
   );
 }

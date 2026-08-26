@@ -1,97 +1,157 @@
-import { Badge } from '../types/math';
+import { Badge } from '../types/curriculum';
 
 export const badges: Badge[] = [
+  // --- Math Badges ---
   {
     id: 'badge_first_step',
     name: 'Khởi Đầu Nan',
     description: 'Bắt đầu hành trình khám phá Toán Lớp 5',
     icon: '🌱',
-    category: 'adventure'
+    category: 'adventure',
+    subjectId: 'math'
   },
   {
     id: 'badge_boss_ch1',
     name: 'Dũng Sĩ Phân Số',
-    description: 'Đánh bại Vua Rồng Phân Số Ignis (Chủ đề 1)',
+    description: 'Đánh bại Vua Rồng Phân Số Ignis (Chương 1)',
     icon: '🍰',
-    category: 'adventure'
+    category: 'adventure',
+    subjectId: 'math'
   },
   {
     id: 'badge_boss_ch2',
     name: 'Bậc Thầy Thập Phân',
-    description: 'Thu phục Golem Thập Phân Decimus (Chủ đề 2)',
+    description: 'Thu phục Golem Thập Phân Decimus (Chương 2)',
     icon: '🔮',
-    category: 'adventure'
+    category: 'adventure',
+    subjectId: 'math'
   },
   {
     id: 'badge_boss_ch3',
     name: 'Vua Héc-ta & Diện Tích',
-    description: 'Chinh phục Thần Rừng Silva (Chủ đề 3)',
+    description: 'Chinh phục Thần Rừng Silva (Chương 3)',
     icon: '🌲',
-    category: 'adventure'
+    category: 'adventure',
+    subjectId: 'math'
   },
   {
     id: 'badge_boss_ch4',
     name: 'Pháp Sư 4 Phép Tính',
-    description: 'Chiến thắng Pháp Sư Thập Phân Aurelius (Chủ đề 4)',
+    description: 'Chiến thắng Pháp Sư Thập Phân Aurelius (Chương 4)',
     icon: '⚡',
-    category: 'adventure'
+    category: 'adventure',
+    subjectId: 'math'
   },
   {
     id: 'badge_boss_ch5',
     name: 'Bậc Thầy Hình Phẳng',
-    description: 'Vượt qua Chúa Tể Hình Phẳng Geo (Chủ đề 5)',
+    description: 'Vượt qua Chúa Tể Hình Phẳng Geo (Chương 5)',
     icon: '📐',
-    category: 'adventure'
+    category: 'adventure',
+    subjectId: 'math'
   },
   {
     id: 'badge_boss_ch6',
     name: 'Thủ Khoa Học Kỳ 1',
-    description: 'Đánh bại Giám Khảo Tối Cao Học Kỳ 1 (Chủ đề 6)',
+    description: 'Đánh bại Giám Khảo Tối Cao Học Kỳ 1 (Chương 6)',
     icon: '🎖️',
-    category: 'adventure'
+    category: 'adventure',
+    subjectId: 'math'
   },
   {
     id: 'badge_boss_ch7',
     name: 'Triệu Phú Phần Trăm',
-    description: 'Chinh phục Thần Tài Tỉ Số Cento (Chủ đề 7)',
+    description: 'Chinh phục Thần Tài Tỉ Số Cento (Chương 7)',
     icon: '📊',
-    category: 'adventure'
+    category: 'adventure',
+    subjectId: 'math'
+  },
+
+  // --- Vietnamese / Văn Thần Bút Badges ---
+  {
+    id: 'badge_van_nature_master',
+    name: 'Thần Bút Thiên Nhiên',
+    description: 'Đánh bại Quái Vật Khô Khan - Làm chủ nghệ thuật tả cảnh 5 giác quan',
+    icon: '🌿',
+    category: 'writing',
+    subjectId: 'vietnamese'
   },
   {
-    id: 'badge_boss_ch8',
-    name: 'Vua Mét Khối & Thể Tích',
-    description: 'Chiến thắng Người Khổng Lồ Cubic (Chủ đề 8)',
-    icon: '🧊',
-    category: 'adventure'
+    id: 'badge_van_portrait_master',
+    name: 'Đại Sứ Miêu Tả Người',
+    description: 'Hạ gục Rồng Văn Mẫu - Tả người thân chân thực và sâu sắc',
+    icon: '✨',
+    category: 'writing',
+    subjectId: 'vietnamese'
   },
   {
-    id: 'badge_boss_ch9',
-    name: 'Kiến Trúc Sư 3D',
-    description: 'Vượt qua Phù Thủy Không Gian 3D (Chủ đề 9)',
-    icon: '📦',
-    category: 'adventure'
+    id: 'badge_van_object_master',
+    name: 'Phù Thủy Thổi Hồn',
+    description: 'Đánh bại Thần Cây Ngủ Say - Tả đồ vật & cây cối gắn với kỷ niệm',
+    icon: '🌸',
+    category: 'writing',
+    subjectId: 'vietnamese'
   },
   {
-    id: 'badge_boss_ch10',
-    name: 'Thần Tốc Độ Mach 5',
-    description: 'Hạ gục Thần Tốc Độ Hermes trên đường đua (Chủ đề 10)',
-    icon: '🏎️',
-    category: 'adventure'
-  },
-  {
-    id: 'badge_boss_ch11',
-    name: 'Nhà Tiên Tri Thống Kê',
-    description: 'Chinh phục Biểu Đồ Quạt Tròn Oracle (Chủ đề 11)',
-    icon: '🎯',
-    category: 'adventure'
-  },
-  {
-    id: 'badge_boss_ch12',
-    name: 'Đại Tông Sư Toán 5',
-    description: 'Chinh phục đỉnh cao Toán Tiểu học vào Lớp 6 (Chủ đề 12)',
+    id: 'badge_van_grand_master',
+    name: 'Đại Tông Sư Thần Bút',
+    description: 'Hạ gục Chúa Tể Lười Nghĩ - Mở bài gián tiếp & Kết bài mở rộng đỉnh cao',
     icon: '👑',
-    category: 'adventure'
+    category: 'writing',
+    subjectId: 'vietnamese'
   },
+  {
+    id: 'badge_van_arena_master',
+    name: 'Bút Vàng Siêu Tốc',
+    description: 'Đạt điểm xuất sắc trong Đấu Trường Nâng Cấp Câu 60s',
+    icon: '⚡',
+    category: 'writing',
+    subjectId: 'vietnamese'
+  },
+
+  // --- English Badges ---
+  {
+    id: 'badge_eng_starter',
+    name: 'English Explorer',
+    description: 'Defeat Vocabulary Dragon (Unit 1-5 Daily Routines & Jobs)',
+    icon: '🐲',
+    category: 'special',
+    subjectId: 'english'
+  },
+  {
+    id: 'badge_eng_past_master',
+    name: 'Past-Tense Master',
+    description: 'Conquer Past-Tense Sphinx (Unit 6-10 School & Trips)',
+    icon: '🦁',
+    category: 'special',
+    subjectId: 'english'
+  },
+  {
+    id: 'badge_eng_wizard',
+    name: 'Grammar Wizard',
+    description: 'Defeat Grammar Wizard (Unit 11-15 Health, Safety & Stories)',
+    icon: '🧙‍♂️',
+    category: 'special',
+    subjectId: 'english'
+  },
+  {
+    id: 'badge_eng_champion',
+    name: 'English Champion 5',
+    description: 'Conquer Master Titan (Unit 16-20 Weather, Nature & Holidays)',
+    icon: '⚡',
+    category: 'special',
+    subjectId: 'english'
+  },
+  {
+    id: 'badge_eng_speed_master',
+    name: 'Speed Vocab Hero',
+    description: 'Score high in the English Speed Arena challenge',
+    icon: '🏆',
+    category: 'speed',
+    subjectId: 'english'
+  },
+
+  // --- General & Exam Badges ---
   {
     id: 'badge_speed_50',
     name: 'Đôi Tay Siêu Tốc',
@@ -116,7 +176,7 @@ export const badges: Badge[] = [
   {
     id: 'badge_lab_explorer',
     name: 'Nhà Bác Học Nhí',
-    description: 'Khám phá tất cả các Phòng Thí Nghiệm Toán Học',
+    description: 'Khám phá tất cả các Phòng Thí Nghiệm Học Tập',
     icon: '🧪',
     category: 'special'
   },

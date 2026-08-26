@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GraduationCap, Timer, Award, CheckCircle2, XCircle, ArrowLeft, ArrowRight, Flag, RotateCcw, Sparkles } from 'lucide-react';
+import { GraduationCap, Timer, Award, CheckCircle2, XCircle, ArrowLeft, ArrowRight, Flag, RotateCcw, Sparkles, Trophy } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Exam } from '../types/math';
-import { exams } from '../data/exams';
+import { Exam, SubjectId } from '../types/curriculum';
+import { getExamsBySubject } from '../data/exams';
 import { soundFx } from '../utils/audio';
 
 interface ExamArenaProps {
   examScores: { [examId: string]: number };
+  currentSubject?: SubjectId;
   onSaveExamScore: (examId: string, score: number, xpGained: number) => void;
 }
 
 export const ExamArena: React.FC<ExamArenaProps> = ({
   examScores,
+  currentSubject = 'math',
   onSaveExamScore,
 }) => {
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
@@ -24,6 +26,9 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const answersRef = useRef<{ [qId: string]: string }>({});
+
+  const activeSubject: SubjectId = currentSubject as SubjectId;
+  const availableExams = getExamsBySubject(activeSubject);
 
   const startExam = (exam: Exam) => {
     soundFx.playLevelUp();
@@ -102,331 +107,358 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
         confetti({
           particleCount: 120,
           spread: 80,
-          origin: { y: 0.6 },
+          origin: { y: 0.5 },
         });
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
     } else {
-      soundFx.playCorrect();
+      soundFx.playWrong();
     }
   };
 
-  const formatTime = (secs: number) => {
-    const mins = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${mins}:${s < 10 ? '0' : ''}${s}`;
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  return (
-    <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 py-4 pb-24 space-y-6">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl p-5 sm:p-6 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-2">
-            <GraduationCap className="w-4 h-4" />
-            <span>Phòng Khảo Thí & Đề Thi Chính Thức</span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-black">
-            Bộ Đề Thi Giữa Kỳ, Cuối Kỳ & Lớp 6 CLC
-          </h1>
-          <p className="text-white/80 text-xs sm:text-sm mt-1 max-w-lg">
-            Đề thi bám sát cấu trúc thi chuẩn của Bộ Giáo Dục, có đồng hồ bấm giờ, chấm điểm thang 10 và đáp án lời giải chi tiết.
-          </p>
-        </div>
-      </div>
+  const subjectExamHeaders: Record<SubjectId, { title: string; desc: string; gradient: string; icon: string }> = {
+    math: {
+      title: 'Phòng Thi Chuẩn Quốc Gia - Toán 5 📐',
+      desc: 'Bộ 5 đề thi Giữa kỳ, Cuối kỳ & Tuyển sinh Lớp 6 Trường Chuyên chuẩn thang điểm 10.',
+      gradient: 'from-amber-500 via-orange-500 to-amber-600',
+      icon: '📐',
+    },
+    vietnamese: {
+      title: 'Phòng Thi Chuẩn Quốc Gia - Tiếng Việt 5 ✍️',
+      desc: 'Bộ 5 đề thi Đọc hiểu, Luyện từ và câu, Nghệ thuật miêu tả & Tuyển sinh Lớp 6 Chuyên Văn.',
+      gradient: 'from-emerald-500 via-teal-600 to-cyan-600',
+      icon: '✍️',
+    },
+    english: {
+      title: 'Primary National Exam Room - English 5 🇬🇧',
+      desc: 'Complete 5 standard exams for Grade 5 (Term 1, Term 2 & Advanced Selective Schools).',
+      gradient: 'from-blue-600 via-indigo-600 to-sky-600',
+      icon: '🇬🇧',
+    },
+  };
 
+  const headerInfo = subjectExamHeaders[activeSubject] || subjectExamHeaders.math;
+
+  return (
+    <div className="w-full max-w-5xl mx-auto px-3 sm:px-5 py-3 pb-28 space-y-6 select-none">
+      {/* Header Banner */}
+      {!selectedExam && (
+        <div className={`bg-gradient-to-r ${headerInfo.gradient} rounded-3xl p-5 sm:p-7 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4`}>
+          <div>
+            <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-black text-amber-200 mb-2 border border-white/20">
+              <GraduationCap className="w-4 h-4" />
+              <span>Phòng Khảo Thí & Đánh Giá Năng Lực Lớp 5</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight drop-shadow-xs">
+              {headerInfo.title}
+            </h1>
+            <p className="text-white/90 text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed font-bold">
+              {headerInfo.desc}
+            </p>
+          </div>
+
+          <div className="bg-black/25 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/20 flex sm:flex-col items-center justify-between sm:justify-center shrink-0">
+            <span className="text-[11px] font-bold text-white/80">Tổng Số Đề</span>
+            <span className="text-xl sm:text-2xl font-black text-amber-300">{availableExams.length} Đề Thi</span>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content Area */}
       {!selectedExam ? (
-        /* Exams Directory List */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {exams.map((exam) => {
-            const bestScore = examScores[exam.id];
+        /* Exams Card Grid */
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+          {availableExams.map((exam) => {
+            const previousScore = examScores[exam.id];
+            const isPassed = previousScore !== undefined;
 
             return (
               <div
                 key={exam.id}
-                className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 shadow-lg flex flex-col justify-between hover:border-indigo-500 transition"
+                className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-md hover:shadow-xl transition-all flex flex-col justify-between game-card"
               >
                 <div>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[11px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
-                      {exam.semester === 1 ? 'Học kỳ 1' : 'Học kỳ 2'} • {exam.durationMinutes} Phút
+                  {/* Top Badges */}
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] sm:text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+                      {exam.type === 'mid-term-1' ? 'Giữa Học Kỳ 1' : exam.type === 'final-term-1' ? 'Cuối Học Kỳ 1' : exam.type === 'mid-term-2' ? 'Giữa Học Kỳ 2' : exam.type === 'final-term-2' ? 'Cuối Học Kỳ 2' : 'Tuyển Sinh Lớp 6 CLC'}
                     </span>
-                    {bestScore !== undefined && (
-                      <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2.5 py-0.5 rounded-full text-xs font-black">
-                        <Award className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Kỷ lục: {bestScore}/10 đ</span>
-                      </div>
-                    )}
+
+                    <div className="flex items-center gap-1 text-xs font-black text-slate-500">
+                      <Timer className="w-3.5 h-3.5" />
+                      <span>{exam.durationMinutes} phút</span>
+                    </div>
                   </div>
 
-                  <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base sm:text-lg">
+                  <h3 className="font-black text-slate-900 dark:text-slate-100 text-base sm:text-lg tracking-tight">
                     {exam.title}
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                  <p className="text-slate-600 dark:text-slate-400 text-xs mt-1.5 font-semibold line-clamp-2 leading-relaxed">
                     {exam.description}
                   </p>
+
+                  {/* Previous Score Pill */}
+                  {isPassed && (
+                    <div className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-xl bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-black">
+                      <Award className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Điểm cao nhất: {previousScore}/10 điểm</span>
+                    </div>
+                  )}
                 </div>
 
+                {/* Bottom Actions */}
                 <div className="flex items-center justify-between mt-5 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <span className="text-xs font-semibold text-slate-500">
-                    {exam.questions.length} câu hỏi • Thang điểm 10
+                  <span className="text-xs font-black text-slate-500">
+                    {exam.questions.length} câu • Thang điểm 10
                   </span>
                   <button
                     id={`start-exam-${exam.id}`}
                     onClick={() => startExam(exam)}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-4 py-2 rounded-xl shadow-xs hover:shadow-md transition active:scale-95"
+                    className="btn-3d btn-3d-blue text-xs font-black px-5 py-2.5 rounded-xl shadow-md"
                   >
-                    Vào Thi Ngay
+                    Vào Thi Ngay ⚔️
                   </button>
                 </div>
               </div>
             );
           })}
         </div>
-      ) : isExamSubmitted && examResult ? (
-        /* Exam Results & Step-by-Step Review */
-        <div className="space-y-6">
-          {/* Result Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 text-center shadow-xl space-y-4">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 mx-auto flex items-center justify-center text-4xl shadow-xl">
-              🎓
-            </div>
-            <div>
-              <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100">
-                Kết Quả Bài Thi: {selectedExam.title}
-              </h2>
-              <p className="text-sm text-slate-500 mt-1">
-                Số câu trả lời đúng: {examResult.correctCount}/{selectedExam.questions.length}
-              </p>
-            </div>
-
-            <div className="inline-block bg-indigo-50 dark:bg-indigo-950/40 border-2 border-indigo-200 dark:border-indigo-800 rounded-3xl px-8 py-3 my-2">
-              <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 block uppercase">
-                Điểm Tổng Kết
-              </span>
-              <span className="text-4xl sm:text-5xl font-black text-indigo-700 dark:text-indigo-300">
-                {examResult.score} / 10
-              </span>
-            </div>
-
-            <div className="flex justify-center gap-3">
-              <button
-                id="exam-return-btn"
-                onClick={() => setSelectedExam(null)}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-6 py-3 rounded-2xl shadow-md transition"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Danh Sách Đề Thi Khác</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Detailed Question Review List */}
-          <div className="space-y-4">
-            <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-lg">
-              Lời Giải Chi Tiết Từng Câu:
-            </h3>
-
-            {selectedExam.questions.map((q, idx) => {
-              const userAns = answers[q.id];
-              const isCorrect = userAns === q.correctAnswer;
-
-              return (
-                <div
-                  key={q.id}
-                  className={`p-4 sm:p-5 rounded-2xl border ${
-                    isCorrect
-                      ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800'
-                      : 'bg-rose-50/60 dark:bg-rose-950/20 border-rose-300 dark:border-rose-800'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-500">
-                      Câu {idx + 1} ({q.points} điểm) • {q.topic}
-                    </span>
-                    <div className="flex items-center gap-1 text-xs font-bold">
-                      {isCorrect ? (
-                        <span className="text-emerald-600 flex items-center gap-1">
-                          <CheckCircle2 className="w-4 h-4" /> Đúng
-                        </span>
-                      ) : (
-                        <span className="text-rose-600 flex items-center gap-1">
-                          <XCircle className="w-4 h-4" /> Chưa đúng
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <p className="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base">
-                    {q.question}
-                  </p>
-
-                  <div className="mt-3 text-xs sm:text-sm space-y-1">
-                    <p className="text-slate-600 dark:text-slate-300">
-                      Con chọn: <strong>{userAns || '(Chưa làm)'}</strong>
-                    </p>
-                    <p className="text-emerald-700 dark:text-emerald-300 font-semibold">
-                      Đáp án chuẩn: <strong>{q.correctAnswer}</strong>
-                    </p>
-                    <div className="bg-white/80 dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200 dark:border-slate-700 mt-2">
-                      💡 <strong>Hướng dẫn giải chi tiết:</strong> {q.explanation}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       ) : (
-        /* Active Testing Room */
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-4 sm:p-6 shadow-xl space-y-6">
-          {/* Exam Header Bar */}
-          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        /* Active Exam Workspace */
+        <div className="space-y-4 animate-in fade-in-50 duration-200">
+          {/* Top Timer & Action Bar */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-slate-200 dark:border-slate-800 p-3.5 sm:p-4 shadow-md flex items-center justify-between gap-3">
             <button
               onClick={() => {
-                if (confirm('Bạn có chắc muốn thoát bài thi không? Dữ liệu đang làm sẽ không được lưu.')) {
+                if (window.confirm('Con có chắc chắn muốn rời khỏi phòng thi không? Kết quả bài làm chưa nộp sẽ không được lưu.')) {
                   setSelectedExam(null);
                 }
               }}
-              className="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1"
+              className="flex items-center gap-1.5 text-xs font-black text-slate-600 dark:text-slate-300 hover:text-slate-900 btn-3d"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Thoát</span>
             </button>
 
-            {/* Timer */}
-            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black ${
-              timeLeft < 300 ? 'bg-rose-500 text-white animate-pulse' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-            }`}>
-              <Timer className="w-4 h-4" />
-              <span>{formatTime(timeLeft)}</span>
+            {!isExamSubmitted && (
+              <div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-300 dark:border-rose-800 px-4 py-1.5 rounded-2xl text-rose-700 dark:text-rose-300 shadow-xs">
+                <Timer className="w-4 h-4 animate-pulse text-rose-500" />
+                <span className="font-mono font-black text-base sm:text-lg">{formatTime(timeLeft)}</span>
+              </div>
+            )}
+
+            {!isExamSubmitted ? (
+              <button
+                id="submit-exam-btn"
+                onClick={() => {
+                  const answeredCount = Object.keys(answers).length;
+                  const total = selectedExam.questions.length;
+                  if (answeredCount < total) {
+                    if (!window.confirm(`Con mới làm ${answeredCount}/${total} câu. Con có chắc muốn nộp bài sớm không?`)) {
+                      return;
+                    }
+                  }
+                  submitExam();
+                }}
+                className="btn-3d btn-3d-emerald text-xs font-black px-5 py-2.5 rounded-xl shadow-md"
+              >
+                Nộp Bài Thi
+              </button>
+            ) : (
+              <button
+                onClick={() => setSelectedExam(null)}
+                className="btn-3d btn-3d-blue text-xs font-black px-5 py-2.5 rounded-xl shadow-md"
+              >
+                Về Danh Sách Đề
+              </button>
+            )}
+          </div>
+
+          {/* Exam Result Podium */}
+          {isExamSubmitted && examResult && (
+            <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-900 dark:to-slate-800 rounded-3xl border-2 border-indigo-300 dark:border-indigo-800 p-6 text-center space-y-4 shadow-xl animate-in zoom-in-95 duration-300">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-amber-400 to-orange-500 mx-auto flex items-center justify-center text-4xl shadow-lg animate-bounce">
+                🏆
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-100">
+                Kết Quả Bài Thi: {examResult.score} / 10 Điểm
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto font-bold">
+                Con đã làm đúng <strong className="text-emerald-600 dark:text-emerald-400 text-base">{examResult.correctCount}/{selectedExam.questions.length} câu</strong>. Hãy xem lại từng câu hỏi bên dưới để đối chiếu lời giải chi tiết nhé!
+              </p>
             </div>
+          )}
 
-          </div>
+          {/* Question Grid Number Selector */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-slate-200 dark:border-slate-800 p-4 shadow-xs">
+            <div className="text-xs font-black text-slate-500 mb-2">Bảng câu hỏi ({selectedExam.questions.length} câu):</div>
+            <div className="flex flex-wrap gap-2">
+              {selectedExam.questions.map((q, idx) => {
+                const isCurrent = idx === currentQIndex;
+                const isAnswered = !!answers[q.id];
+                const isFlag = !!flagged[q.id];
+                let isRight = false;
+                if (isExamSubmitted) {
+                  isRight = answers[q.id] === q.correctAnswer;
+                }
 
-          {/* Question Palette Matrix */}
-          <div className="flex flex-wrap items-center gap-1.5 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
-            {selectedExam.questions.map((q, idx) => {
-              const isAnswered = !!answers[q.id];
-              const isFlag = flagged[q.id];
-              const isCurrent = currentQIndex === idx;
+                let btnStyle = 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300';
 
-              return (
-                <button
-                  key={q.id}
-                  id={`palette-btn-${idx}`}
-                  onClick={() => {
-                    soundFx.playClick();
-                    setCurrentQIndex(idx);
-                  }}
-                  className={`w-8 h-8 rounded-xl text-xs font-bold transition flex items-center justify-center relative ${
-                    isCurrent
-                      ? 'bg-indigo-600 text-white ring-2 ring-indigo-400'
-                      : isAnswered
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                      : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-200 border border-slate-200 dark:border-slate-600'
-                  }`}
-                >
-                  <span>{idx + 1}</span>
-                  {isFlag && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                if (isExamSubmitted) {
+                  btnStyle = isRight
+                    ? 'btn-3d-emerald font-black shadow-xs'
+                    : 'btn-3d-rose font-black shadow-xs';
+                } else if (isCurrent) {
+                  btnStyle = 'btn-3d-blue font-black ring-2 ring-blue-400 shadow-sm';
+                } else if (isAnswered) {
+                  btnStyle = 'bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-200 border-2 border-blue-400 font-bold';
+                }
 
-          {/* Active Question Box */}
-          {(() => {
-            const currentQ = selectedExam.questions[currentQIndex];
-            const currentAns = answers[currentQ.id];
-            const isFlag = flagged[currentQ.id];
-
-            return (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 rounded-xl">
-                    Câu {currentQIndex + 1}/{selectedExam.questions.length} ({currentQ.points} điểm)
-                  </span>
-
+                return (
                   <button
-                    id="toggle-flag-btn"
-                    onClick={() => toggleFlag(currentQ.id)}
-                    className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl border transition ${
-                      isFlag
-                        ? 'bg-amber-100 border-amber-300 text-amber-800'
-                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                    key={q.id}
+                    onClick={() => {
+                      soundFx.playClick();
+                      setCurrentQIndex(idx);
+                    }}
+                    className={`relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-xs font-bold transition btn-3d ${btnStyle}`}
+                  >
+                    <span>{idx + 1}</span>
+                    {isFlag && !isExamSubmitted && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-white" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Active Question Display Card */}
+          {selectedExam.questions[currentQIndex] && (
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-md space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black px-3 py-1 bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 rounded-full">
+                    Câu {currentQIndex + 1} / {selectedExam.questions.length} ({selectedExam.questions[currentQIndex].points} điểm)
+                  </span>
+                  <span className="text-xs font-bold text-slate-500 hidden sm:inline">
+                    Chủ đề: {selectedExam.questions[currentQIndex].topic}
+                  </span>
+                </div>
+
+                {!isExamSubmitted && (
+                  <button
+                    onClick={() => toggleFlag(selectedExam.questions[currentQIndex].id)}
+                    className={`flex items-center gap-1 text-xs font-black px-3 py-1 rounded-xl border transition ${
+                      flagged[selectedExam.questions[currentQIndex].id]
+                        ? 'border-amber-400 bg-amber-50 text-amber-800'
+                        : 'border-slate-200 text-slate-500 hover:bg-slate-100'
                     }`}
                   >
                     <Flag className="w-3.5 h-3.5" />
-                    <span>{isFlag ? 'Đã đánh dấu xem lại' : 'Đánh dấu câu này'}</span>
+                    <span>{flagged[selectedExam.questions[currentQIndex].id] ? 'Đã đánh dấu' : 'Đánh dấu'}</span>
                   </button>
-                </div>
+                )}
+              </div>
 
-                <div className="bg-slate-50 dark:bg-slate-800/60 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700">
-                  <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base leading-relaxed">
-                    {currentQ.question}
-                  </h3>
-                </div>
+              {/* Question Statement */}
+              <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-slate-100 leading-relaxed bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+                {selectedExam.questions[currentQIndex].question}
+              </h3>
 
-                {/* Options */}
-                {currentQ.options && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {currentQ.options.map((opt, idx) => (
+              {/* Multiple Choice Options */}
+              {selectedExam.questions[currentQIndex].options && (
+                <div className="grid grid-cols-1 gap-2.5">
+                  {selectedExam.questions[currentQIndex].options.map((opt, idx) => {
+                    const qId = selectedExam.questions[currentQIndex].id;
+                    const isSelected = answers[qId] === opt;
+                    const isCorrectOpt = opt === selectedExam.questions[currentQIndex].correctAnswer;
+
+                    let optionStyle = 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-indigo-400';
+
+                    if (isExamSubmitted) {
+                      if (isCorrectOpt) {
+                        optionStyle = 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-emerald-900 dark:text-emerald-200 font-black ring-2 ring-emerald-400';
+                      } else if (isSelected && !isCorrectOpt) {
+                        optionStyle = 'bg-rose-50 dark:bg-rose-950/60 border-rose-500 text-rose-900 dark:text-rose-200 font-bold';
+                      } else {
+                        optionStyle = 'bg-slate-50 opacity-40';
+                      }
+                    } else if (isSelected) {
+                      optionStyle = 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-600 text-indigo-900 dark:text-indigo-200 font-black ring-2 ring-indigo-400 shadow-sm';
+                    }
+
+                    return (
                       <button
                         key={idx}
-                        id={`exam-opt-${idx}`}
-                        onClick={() => handleSelectOption(currentQ.id, opt)}
-                        className={`p-4 rounded-2xl border-2 text-left text-xs sm:text-sm font-semibold transition flex items-center justify-between ${
-                          currentAns === opt
-                            ? 'bg-indigo-50 dark:bg-indigo-950/50 border-indigo-600 text-indigo-900 dark:text-indigo-200'
-                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-indigo-300'
-                        }`}
+                        disabled={isExamSubmitted}
+                        onClick={() => handleSelectOption(qId, opt)}
+                        className={`p-3.5 sm:p-4 rounded-2xl border-2 text-left text-xs sm:text-sm font-bold transition-all flex items-center justify-between btn-3d active:scale-98 ${optionStyle}`}
                       >
-                        <span>{opt}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="w-7 h-7 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 flex items-center justify-center text-xs font-black shrink-0">
+                            {String.fromCharCode(65 + idx)}
+                          </span>
+                          <span>{opt}</span>
+                        </div>
+                        {isExamSubmitted && isCorrectOpt && (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                        )}
+                        {isExamSubmitted && isSelected && !isCorrectOpt && (
+                          <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                        )}
                       </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Navigation and Submit Buttons */}
-                <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
-                  <button
-                    disabled={currentQIndex === 0}
-                    onClick={() => setCurrentQIndex((prev) => prev - 1)}
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 disabled:opacity-40"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>Câu trước</span>
-                  </button>
-
-                  {currentQIndex + 1 < selectedExam.questions.length ? (
-                    <button
-                      onClick={() => setCurrentQIndex((prev) => prev + 1)}
-                      className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md transition"
-                    >
-                      <span>Câu tiếp theo</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  ) : (
-                    <button
-                      id="submit-exam-final-btn"
-                      onClick={() => {
-                        if (confirm('Bạn có chắc muốn nộp bài thi ngay bây giờ?')) {
-                          submitExam();
-                        }
-                      }}
-                      className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl text-xs font-extrabold shadow-md transition"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>NỘP BÀI THI</span>
-                    </button>
-                  )}
+                    );
+                  })}
                 </div>
+              )}
+
+              {/* Detailed Solution on Exam Review */}
+              {isExamSubmitted && (
+                <div className="bg-emerald-50/80 dark:bg-emerald-950/40 border-2 border-emerald-300 dark:border-emerald-800 p-4 rounded-2xl space-y-1.5 text-xs">
+                  <div className="font-black text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Lời giải chi tiết:</span>
+                  </div>
+                  <p className="text-slate-700 dark:text-slate-300 font-semibold leading-relaxed">
+                    {selectedExam.questions[currentQIndex].explanation}
+                  </p>
+                </div>
+              )}
+
+              {/* Prev / Next Question Actions */}
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  disabled={currentQIndex === 0}
+                  onClick={() => {
+                    soundFx.playClick();
+                    setCurrentQIndex((prev) => Math.max(0, prev - 1));
+                  }}
+                  className="flex items-center gap-1.5 text-xs font-black px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 disabled:opacity-40 btn-3d btn-3d-white"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Câu Trước</span>
+                </button>
+
+                <button
+                  disabled={currentQIndex + 1 >= selectedExam.questions.length}
+                  onClick={() => {
+                    soundFx.playClick();
+                    setCurrentQIndex((prev) => Math.min(selectedExam.questions.length - 1, prev + 1));
+                  }}
+                  className="flex items-center gap-1.5 text-xs font-black px-4 py-2.5 rounded-xl btn-3d btn-3d-blue disabled:opacity-40"
+                >
+                  <span>Câu Tiếp</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
-            );
-          })()}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1,20 +1,22 @@
-import { UserProgress } from '../types/math';
+import { UserProgress, SubjectId } from '../types/curriculum';
 
-const STORAGE_KEY = 'mathquest_grade5_progress_v1';
+const STORAGE_KEY = 'mathquest_grade5_progress_v2';
 
 function createInitialProgress(): UserProgress {
   return {
     playerName: 'Dũng Sĩ Nhí',
     avatar: '🦁',
-    xp: 120,
-    coins: 50,
+    xp: 150,
+    coins: 60,
     streakDays: 1,
     lastActiveDate: new Date().toISOString().split('T')[0],
-    unlockedLessonIds: ['ch1_l1'],
+    unlockedLessonIds: ['ch1_l1', 'van_c1_l1', 'eng_c1_l1'],
     completedLessonStars: {},
     defeatedBossIds: [],
     unlockedBadgeIds: ['badge_first_step'],
     speedArenaHighScore: 0,
+    writingArenaHighScore: 0,
+    englishArenaHighScore: 0,
     examResults: [],
     soundEnabled: true,
   };
@@ -24,7 +26,11 @@ export const initialProgress: UserProgress = createInitialProgress();
 
 export function loadUserProgress(): UserProgress {
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
+    // Try current key first, fallback to v1 key
+    let data = localStorage.getItem(STORAGE_KEY);
+    if (!data) {
+      data = localStorage.getItem('mathquest_grade5_progress_v1');
+    }
     if (!data) return createInitialProgress();
     const parsed = JSON.parse(data);
 
@@ -44,10 +50,17 @@ export function loadUserProgress(): UserProgress {
     }
 
     const defaults = createInitialProgress();
+    const unlocked = Array.isArray(parsed.unlockedLessonIds) ? [...parsed.unlockedLessonIds] : defaults.unlockedLessonIds;
+    
+    // Ensure initial lessons for all subjects are unlocked
+    if (!unlocked.includes('ch1_l1')) unlocked.push('ch1_l1');
+    if (!unlocked.includes('van_c1_l1')) unlocked.push('van_c1_l1');
+    if (!unlocked.includes('eng_c1_l1')) unlocked.push('eng_c1_l1');
+
     return {
       ...defaults,
       ...parsed,
-      unlockedLessonIds: Array.isArray(parsed.unlockedLessonIds) ? [...parsed.unlockedLessonIds] : defaults.unlockedLessonIds,
+      unlockedLessonIds: unlocked,
       completedLessonStars: parsed.completedLessonStars && typeof parsed.completedLessonStars === 'object' ? { ...parsed.completedLessonStars } : {},
       defeatedBossIds: Array.isArray(parsed.defeatedBossIds) ? [...parsed.defeatedBossIds] : defaults.defeatedBossIds,
       unlockedBadgeIds: Array.isArray(parsed.unlockedBadgeIds) ? [...parsed.unlockedBadgeIds] : defaults.unlockedBadgeIds,
@@ -77,7 +90,7 @@ export function addCompletedLesson(
   const current = loadUserProgress();
   const prevStars = current.completedLessonStars[lessonId] || 0;
 
-  // Only award XP / coins once or bonus for higher stars
+  // Only award full XP / coins once or bonus for higher stars
   const isFirstTime = prevStars === 0;
   const isImprovement = stars > prevStars;
   const earnedXp = isFirstTime ? xpReward : isImprovement ? Math.round(xpReward * 0.3) : 0;
@@ -140,12 +153,24 @@ export function addExamScore(
   return current;
 }
 
-export function updateSpeedScore(score: number, xpGained: number): UserProgress {
+export function updateSpeedScore(score: number, xpGained: number, subject: SubjectId = 'math'): UserProgress {
   const current = loadUserProgress();
   current.xp += xpGained;
-  if (score > current.speedArenaHighScore) {
-    current.speedArenaHighScore = score;
+  
+  if (subject === 'vietnamese') {
+    current.writingArenaHighScore = Math.max(current.writingArenaHighScore || 0, score);
+    if (score >= 40 && !current.unlockedBadgeIds.includes('badge_van_arena_master')) {
+      current.unlockedBadgeIds.push('badge_van_arena_master');
+    }
+  } else if (subject === 'english') {
+    current.englishArenaHighScore = Math.max(current.englishArenaHighScore || 0, score);
+    if (score >= 40 && !current.unlockedBadgeIds.includes('badge_eng_speed_master')) {
+      current.unlockedBadgeIds.push('badge_eng_speed_master');
+    }
+  } else {
+    current.speedArenaHighScore = Math.max(current.speedArenaHighScore || 0, score);
   }
+
   if (score >= 50 && !current.unlockedBadgeIds.includes('badge_speed_50')) {
     current.unlockedBadgeIds.push('badge_speed_50');
   }
@@ -160,13 +185,14 @@ export function updateSpeedScore(score: number, xpGained: number): UserProgress 
 export function resetAllProgress(): UserProgress {
   try {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('mathquest_grade5_progress_v1');
   } catch (e) {
     // ignore
   }
   return createInitialProgress();
 }
 
-export function calculatePlayerRank(xp: number): {
+export function calculatePlayerRank(xp: number, subject: SubjectId = 'math'): {
   rankName: string;
   level: number;
   nextLevelXp: number;
@@ -180,12 +206,30 @@ export function calculatePlayerRank(xp: number): {
     if (xp < accumulated + needed) {
       const currentLevelXp = xp - accumulated;
       const progressPercent = Math.min(100, Math.round((currentLevelXp / needed) * 100));
+      
       let rankName = 'Tập Sự Số Học';
-      if (level >= 15) rankName = 'Đại Tông Sư Toán 5 👑';
-      else if (level >= 12) rankName = 'Pháp Sư Không Gian ⚡';
-      else if (level >= 9) rankName = 'Hiệp Sĩ Chuyển Động ⚔️';
-      else if (level >= 6) rankName = 'Thần Toán Thập Phân 💎';
-      else if (level >= 3) rankName = 'Dũng Sĩ Phân Số 🛡️';
+      if (subject === 'vietnamese') {
+        if (level >= 15) rankName = 'Đại Tông Sư Thần Bút 👑';
+        else if (level >= 12) rankName = 'Kỳ Tài Ngôn Từ ⚡';
+        else if (level >= 9) rankName = 'Đại Sứ Miêu Tả 🌟';
+        else if (level >= 6) rankName = 'Hiệp Sĩ Câu Chữ ⚔️';
+        else if (level >= 3) rankName = 'Thần Bút Nhí ✍️';
+        else rankName = 'Bút Non Tập Sự ✏️';
+      } else if (subject === 'english') {
+        if (level >= 15) rankName = 'Global Master 👑';
+        else if (level >= 12) rankName = 'Language Wizard ⚡';
+        else if (level >= 9) rankName = 'English Champion 🌟';
+        else if (level >= 6) rankName = 'Fluency Knight ⚔️';
+        else if (level >= 3) rankName = 'Grammar Hero 🛡️';
+        else rankName = 'Word Explorer 🔍';
+      } else {
+        if (level >= 15) rankName = 'Đại Tông Sư Toán 5 👑';
+        else if (level >= 12) rankName = 'Pháp Sư Không Gian ⚡';
+        else if (level >= 9) rankName = 'Hiệp Sĩ Chuyển Động ⚔️';
+        else if (level >= 6) rankName = 'Thần Toán Thập Phân 💎';
+        else if (level >= 3) rankName = 'Dũng Sĩ Phân Số 🛡️';
+        else rankName = 'Tập Sự Số Học 📐';
+      }
 
       return {
         rankName,

@@ -141,6 +141,11 @@ class AudioManager {
     });
   }
 
+  // Alias for win fanfare
+  public playWin() {
+    this.playLevelUp();
+  }
+
   // Countdown tick
   public playTick() {
     if (this.isMuted) return;
