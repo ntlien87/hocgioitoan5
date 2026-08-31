@@ -1,5 +1,6 @@
 import React from 'react';
 import { SubjectId } from '../types/curriculum';
+import { SUBJECTS } from '../data/subjects';
 import { soundFx } from '../utils/audio';
 
 interface SubjectSwitcherProps {
@@ -11,39 +12,14 @@ export const SubjectSwitcher: React.FC<SubjectSwitcherProps> = ({
   currentSubject,
   onSelectSubject,
 }) => {
-  const subjects: {
-    id: SubjectId;
-    label: string;
-    sublabel: string;
-    icon: string;
-    activeStyle: string;
-    badge?: string;
-  }[] = [
-    {
-      id: 'math',
-      label: 'Toán Học 5',
-      sublabel: 'Math Quest',
-      icon: '📐',
-      activeStyle: 'btn-3d-amber font-black shadow-lg',
-      badge: 'Hot 🔥',
-    },
-    {
-      id: 'vietnamese',
-      label: 'Tiếng Việt',
-      sublabel: 'Thần Bút Nhí',
-      icon: '✍️',
-      activeStyle: 'btn-3d-emerald font-black shadow-lg',
-      badge: 'Văn Hay ⭐',
-    },
-    {
-      id: 'english',
-      label: 'Tiếng Anh 5',
-      sublabel: 'English Quest',
-      icon: '🇬🇧',
-      activeStyle: 'btn-3d-blue font-black shadow-lg',
-      badge: 'Mới 🚀',
-    },
-  ];
+  const subjects = SUBJECTS.map((subject) => ({
+    id: subject.id,
+    label: subject.nameVi,
+    sublabel: subject.nameEn,
+    icon: subject.icon,
+    activeStyle: subject.activeStyle,
+    badge: subject.badge,
+  }));
 
   return (
     <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 pt-2.5 pb-1 select-none">

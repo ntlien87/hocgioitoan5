@@ -1,6 +1,15 @@
 import { UserProgress, SubjectId } from '../types/curriculum';
+import { getStarterLessonIds } from '../data';
 
 const STORAGE_KEY = 'mathquest_grade5_progress_v2';
+
+function ensureStarterLessonsUnlocked(unlocked: string[]): string[] {
+  const next = [...unlocked];
+  for (const lessonId of getStarterLessonIds()) {
+    if (!next.includes(lessonId)) next.push(lessonId);
+  }
+  return next;
+}
 
 function createInitialProgress(): UserProgress {
   return {
@@ -10,7 +19,7 @@ function createInitialProgress(): UserProgress {
     coins: 60,
     streakDays: 1,
     lastActiveDate: new Date().toISOString().split('T')[0],
-    unlockedLessonIds: ['ch1_l1', 'van_c1_l1', 'eng_c1_l1'],
+    unlockedLessonIds: getStarterLessonIds(),
     completedLessonStars: {},
     defeatedBossIds: [],
     unlockedBadgeIds: ['badge_first_step'],
@@ -50,12 +59,9 @@ export function loadUserProgress(): UserProgress {
     }
 
     const defaults = createInitialProgress();
-    const unlocked = Array.isArray(parsed.unlockedLessonIds) ? [...parsed.unlockedLessonIds] : defaults.unlockedLessonIds;
-    
-    // Ensure initial lessons for all subjects are unlocked
-    if (!unlocked.includes('ch1_l1')) unlocked.push('ch1_l1');
-    if (!unlocked.includes('van_c1_l1')) unlocked.push('van_c1_l1');
-    if (!unlocked.includes('eng_c1_l1')) unlocked.push('eng_c1_l1');
+    const unlocked = ensureStarterLessonsUnlocked(
+      Array.isArray(parsed.unlockedLessonIds) ? parsed.unlockedLessonIds : defaults.unlockedLessonIds
+    );
 
     return {
       ...defaults,

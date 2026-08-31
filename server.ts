@@ -98,7 +98,7 @@ Mục tiêu của bạn:
       }
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.7-flash',
+        model: 'gemini-2.5-flash',
         contents: `Bối cảnh bài học: ${context || 'Lớp 5'}\n\nCâu hỏi/Đoạn văn của học sinh: ${prompt}`,
         config: {
           systemInstruction,

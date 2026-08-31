@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GraduationCap, Timer, Award, CheckCircle2, XCircle, ArrowLeft, ArrowRight, Flag, RotateCcw, Sparkles, Trophy } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Exam, SubjectId } from '../types/curriculum';
-import { getExamsBySubject } from '../data/exams';
+import { getExamsBySubject } from '../data';
 import { soundFx } from '../utils/audio';
 
 interface ExamArenaProps {

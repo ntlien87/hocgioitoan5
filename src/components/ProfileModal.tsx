@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Trophy, Sparkles, RotateCcw, Check, Flame, Coins, Shield, Award } from 'lucide-react';
 import { UserProgress, SubjectId } from '../types/curriculum';
 import { calculatePlayerRank } from '../utils/storage';
-import { badges } from '../data/badges';
+import { getBadgesBySubject } from '../data/badges';
 import { soundFx } from '../utils/audio';
 
 interface ProfileModalProps {
@@ -18,15 +18,17 @@ const AVATAR_OPTIONS = ['🦁', '🦉', '🚀', '🧙‍♂️', '🦊', '🤖',
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({
   progress,
-  currentSubject = 'math',
+  currentSubject: subjectFromProps,
   onClose,
   onUpdateName,
   onUpdateAvatar,
   onResetProgress,
 }) => {
+  const currentSubject: SubjectId = subjectFromProps ?? 'math';
   const [name, setName] = useState(progress.playerName);
   const [isEditingName, setIsEditingName] = useState(false);
   const rank = calculatePlayerRank(progress.xp, currentSubject);
+  const badges = getBadgesBySubject(currentSubject);
 
   const profileTitles: Record<SubjectId, string> = {
     math: 'Hồ Sơ Hiệp Sĩ Toán Học ⚔️',

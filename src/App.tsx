@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { ActiveTab, Chapter, LessonLevel, UserProgress, SubjectId } from './types/curriculum';
 import {
   loadUserProgress,
@@ -10,28 +10,35 @@ import {
   resetAllProgress,
 } from './utils/storage';
 import { soundFx } from './utils/audio';
-import { getChaptersBySubject } from './data/curriculum';
+import { getChaptersBySubject } from './data';
 
-// Subcomponents
+// Always-visible layout components (no lazy)
 import { Navbar } from './components/Navbar';
 import { SubjectSwitcher } from './components/SubjectSwitcher';
 import { BottomNav } from './components/BottomNav';
 import { QuestMap } from './components/QuestMap';
-import { LessonModal } from './components/LessonModal';
-import { BossBattleModal } from './components/BossBattleModal';
-import { SpeedArena } from './components/SpeedArena';
-import { MathLabs } from './components/MathLabs';
-import { ExamArena } from './components/ExamArena';
-import { AITutorChat } from './components/AITutorChat';
-import { ProfileModal } from './components/ProfileModal';
 
-// Writing Subcomponents
-import { WritingLabs } from './components/writing/WritingLabs';
-import { WritingArena } from './components/writing/WritingArena';
+// Heavy tab/modal components — lazy loaded to reduce initial JS bundle
+const LessonModal    = lazy(() => import('./components/LessonModal').then(m => ({ default: m.LessonModal })));
+const BossBattleModal = lazy(() => import('./components/BossBattleModal').then(m => ({ default: m.BossBattleModal })));
+const SpeedArena     = lazy(() => import('./components/SpeedArena').then(m => ({ default: m.SpeedArena })));
+const MathLabs       = lazy(() => import('./components/MathLabs').then(m => ({ default: m.MathLabs })));
+const ExamArena      = lazy(() => import('./components/ExamArena').then(m => ({ default: m.ExamArena })));
+const AITutorChat    = lazy(() => import('./components/AITutorChat').then(m => ({ default: m.AITutorChat })));
+const ProfileModal   = lazy(() => import('./components/ProfileModal').then(m => ({ default: m.ProfileModal })));
 
-// English Subcomponents
-import { EnglishLabs } from './components/english/EnglishLabs';
-import { EnglishArena } from './components/english/EnglishArena';
+// Writing & English — lazy loaded
+const WritingLabs    = lazy(() => import('./components/writing/WritingLabs').then(m => ({ default: m.WritingLabs })));
+const WritingArena   = lazy(() => import('./components/writing/WritingArena').then(m => ({ default: m.WritingArena })));
+const EnglishLabs    = lazy(() => import('./components/english/EnglishLabs').then(m => ({ default: m.EnglishLabs })));
+const EnglishArena   = lazy(() => import('./components/english/EnglishArena').then(m => ({ default: m.EnglishArena })));
+
+// Fallback spinner khi lazy component đang tải
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center flex-1 py-20">
+    <div className="text-4xl animate-spin">⚙️</div>
+  </div>
+);
 
 export default function App() {
   const [progress, setProgress] = useState<UserProgress>(loadUserProgress);
@@ -175,6 +182,7 @@ export default function App() {
 
       {/* Main Tab Content Display */}
       <main className="flex-1 flex flex-col items-center justify-start w-full">
+        <Suspense fallback={<LoadingFallback />}>
         {activeTab === 'quest' && (
           <QuestMap
             progress={progress}
@@ -223,6 +231,7 @@ export default function App() {
         )}
 
         {activeTab === 'tutor' && <AITutorChat currentSubject={currentSubject} />}
+        </Suspense>
       </main>
 
       {/* Bottom Responsive Navigation Bar */}
@@ -232,34 +241,36 @@ export default function App() {
         onSelectTab={(tab) => setActiveTab(tab)}
       />
 
-      {/* Modals */}
-      {activeLessonData && (
-        <LessonModal
-          lesson={activeLessonData.lesson}
-          chapter={activeLessonData.chapter}
-          onClose={() => setActiveLessonData(null)}
-          onCompleteLesson={handleCompleteLesson}
-        />
-      )}
+      {/* Modals — wrapped in Suspense so lazy imports work */}
+      <Suspense fallback={null}>
+        {activeLessonData && (
+          <LessonModal
+            lesson={activeLessonData.lesson}
+            chapter={activeLessonData.chapter}
+            onClose={() => setActiveLessonData(null)}
+            onCompleteLesson={handleCompleteLesson}
+          />
+        )}
 
-      {activeBossChapter && (
-        <BossBattleModal
-          chapter={activeBossChapter}
-          onClose={() => setActiveBossChapter(null)}
-          onDefeatBoss={handleDefeatBoss}
-        />
-      )}
+        {activeBossChapter && (
+          <BossBattleModal
+            chapter={activeBossChapter}
+            onClose={() => setActiveBossChapter(null)}
+            onDefeatBoss={handleDefeatBoss}
+          />
+        )}
 
-      {isProfileOpen && (
-        <ProfileModal
-          progress={progress}
-          currentSubject={currentSubject}
-          onClose={() => setIsProfileOpen(false)}
-          onUpdateName={handleUpdateName}
-          onUpdateAvatar={handleUpdateAvatar}
-          onResetProgress={handleResetProgress}
-        />
-      )}
+        {isProfileOpen && (
+          <ProfileModal
+            progress={progress}
+            currentSubject={currentSubject}
+            onClose={() => setIsProfileOpen(false)}
+            onUpdateName={handleUpdateName}
+            onUpdateAvatar={handleUpdateAvatar}
+            onResetProgress={handleResetProgress}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

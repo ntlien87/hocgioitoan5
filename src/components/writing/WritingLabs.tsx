@@ -5,7 +5,7 @@ import {
   sensoryPaletteData,
   indirectIntroTemplates,
   SentenceUpgradeItem
-} from '../../data/writingLabsData';
+} from '../../data/vietnamese';
 import { soundFx } from '../../utils/audio';
 
 export const WritingLabs: React.FC = () => {

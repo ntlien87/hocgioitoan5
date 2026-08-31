@@ -61,7 +61,7 @@ export interface LessonLevel {
 
 export interface Chapter {
   id: string;
-  subjectId?: SubjectId;
+  subjectId: SubjectId;
   title: string;
   vietnameseTitle: string;
   description: string;
@@ -114,7 +114,7 @@ export interface EssayGradingResult {
 
 export interface Exam {
   id: string;
-  subjectId?: SubjectId;
+  subjectId: SubjectId;
   title: string;
   semester: 1 | 2;
   type: 'mid-term-1' | 'final-term-1' | 'mid-term-2' | 'final-term-2' | 'grade-6-prep' | 'writing-mastery';
