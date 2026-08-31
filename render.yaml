@@ -2,7 +2,7 @@ services:
   - type: web
     name: hoc-gioi-toan-5
     runtime: node
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
